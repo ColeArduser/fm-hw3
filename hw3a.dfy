@@ -68,39 +68,42 @@ lemma orderedListLemma(l: IList)
 {
   match l
   case Nil =>
-  case Cons(x, Nil) =>
-  case Cons(x, Cons(y, _)) =>
+  case Cons(x, t) =>
+    if t != Nil {
+      // Induction hypothesis on the tail
+      orderedListLemma(t);
+    }
+
     forall i, j | 0 <= i < j < len(l)
       ensures at(l, i) <= at(l, j)
     {
       if i == 0 {
         if j == 1 {
-          // Direct from isOrderedList
+          // direct from isOrderedList
         } else {
+          assert isOrderedList(l);
           calc {
             at(l, 0);
-          ==  // definition
+          == 
             x;
-          <=  // from isOrderedList(l)
-            y;
-          ==  // definition
-            at(l, 1);
-          ==  // definition of at
-            at(l.tail, 0);
-          <=  // IH on l.tail
-            at(l.tail, j - 1);
-          ==  // definition of at
-            at(l, j);
+          <=
+            at(t, 0); // from isOrderedList(l)
+          <=
+            at(t, j - 1); // from orderedListLemma(t)
+          ==
+            at(l, j); // index shift
           }
         }
       } else {
+        // Both i and j are in the tail
+        assert 0 <= i-1 < j-1 < len(t);
         calc {
           at(l, i);
-        ==  // definition of at
-          at(l.tail, i - 1);
-        <=  // IH on l.tail
-          at(l.tail, j - 1);
-        ==  // definition of at
+        ==
+          at(t, i - 1);
+        <=
+          at(t, j - 1);
+        ==
           at(l, j);
         }
       }
@@ -184,8 +187,8 @@ ghost predicate isOrderedTree(t: BTree)
   match t
   case Leaf => true
   case Node(t1, x, t2) =>
-    (t1.Leaf? || x <= top(t1)) &&
-    (t2.Leaf? || x <= top(t2)) &&
+    (t1 != Leaf ==> x <= top(t1)) &&
+    (t2 != Leaf ==> x <= top(t2)) &&
     isOrderedTree(t1) &&
     isOrderedTree(t2)
 }
